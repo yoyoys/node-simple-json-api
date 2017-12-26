@@ -29,33 +29,39 @@ const jsonObject = {
 
 const server = http.createServer((request, response) => {
     let pathname = url.parse(request.url, true).pathname.toLowerCase();
+    let result = handleResult(pathname, jsonObject);
+
     response.setHeader('Content-Type', 'application/json');
-    handleReturn(pathname, response);
+    
+    if(result){
+        response.statusCode = 200;
+        response.end(JSON.stringify(result));    
+    }else{
+        response.statusCode = 404;
+        response.end("not found");    
+    }
 });
 
 server.listen(port, host, () => {
     console.log(`server running at http://${host}:${port}/`)
 });
 
-function handleReturn(pathname, response, json = jsonObject) {
+function handleResult(pathname, json = jsonObject) {
     var subIndex = pathname.indexOf('/', 1);
     if (subIndex > 0 && subIndex != pathname.length - 1) {
         var current = pathname.substring(0, subIndex);
-        handleReturn(pathname.substring(subIndex), response, json[current]);
+        return handleResult(pathname.substring(subIndex), json[current]);
     } else {
         if (subIndex > 0)
             pathname = pathname.substring(0, subIndex);
 
-        response.statusCode = 200;
-        
         if(json[pathname]===undefined){
-            response.statusCode = 404;
-            response.end("not found");
+            return null;
         }else{
             if (pathname !== '/' && json[pathname]['/'] !== undefined)
-                response.end(JSON.stringify(json[pathname]['/']));
+                return json[pathname]['/'];
             else
-                response.end(JSON.stringify(json[pathname]));
+                return json[pathname];
         }
     }
 }
